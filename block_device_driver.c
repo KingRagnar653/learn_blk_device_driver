@@ -40,7 +40,22 @@ static struct my_blk_dev {
 /*
  * functions and struct to intialise queue structure
  */
-static blk_status_t my_block_request(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd);
+static blk_status_t my_block_request(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd) {
+    struct request *rq = bd->rq;
+    struct my_blk_dev *dev = rq->q->queuedata;
+
+    blk_mq_start_request(rq);
+
+    if (blk_rq_is_passthrough(rq)) {
+        printk("req: skip non fs request\n");
+        blk_mq_end_request(rq, BLK_STS_IOERR);
+        goto out;
+    }
+
+    blk_mq_end_end_request(rq, BLK_STS_OK);
+goto out:
+    return BLK_STS_OK;
+}
 
 struct blk_mq_ops my_queue_ops = {
     .queue_rq = my_block_request,
